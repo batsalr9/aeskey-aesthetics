@@ -40,25 +40,9 @@ const HeroSection = () => {
   }, []);
 
   return (
-    <section className="relative min-h-screen w-full overflow-hidden flex items-center justify-center pt-16">
-      {/* 3D Keyboard */}
-      <div className="absolute w-full h-full flex items-center justify-center">
-        <div 
-          ref={keyboardRef}
-          className="w-[600px] h-[250px] bg-gradient-to-br from-aeskey-sky-blue via-aeskey-sky-blue/70 to-aeskey-dark-gray rounded-lg shadow-2xl absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 perspective-1000 transition-transform duration-300 ease-out animate-on-load"
-          style={{ transformStyle: 'preserve-3d', opacity: 0, transition: 'opacity 0.5s ease, transform 0.5s ease' }}
-        >
-          {/* Keyboard Keys */}
-          <div className="absolute inset-4 bg-aeskey-dark-gray rounded grid grid-cols-12 gap-1 p-2" style={{ transform: 'translateZ(10px)' }}>
-            {Array.from({ length: 60 }).map((_, i) => (
-              <div key={i} className="bg-aeskey-light-gray/90 rounded-sm" style={{ height: '20px' }}></div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="container mx-auto px-4 relative z-10 mt-40 md:mt-0">
+    <section className="relative min-h-screen w-full overflow-hidden flex flex-col items-center justify-start pt-32 md:pt-40">
+      {/* Content - Now positioned above the keyboard */}
+      <div className="container mx-auto px-4 relative z-10 mb-16 md:mb-32">
         <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
           <h1 
             className="text-4xl md:text-6xl lg:text-7xl font-bold font-metropolis mb-6 animate-on-load text-aeskey-dark-gray dark:text-white"
@@ -88,6 +72,22 @@ const HeroSection = () => {
             >
               See Features
             </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* 3D Keyboard - Now positioned below the text */}
+      <div className="absolute bottom-20 w-full h-[40%] flex items-center justify-center">
+        <div 
+          ref={keyboardRef}
+          className="w-[600px] h-[250px] bg-gradient-to-br from-aeskey-sky-blue via-aeskey-sky-blue/70 to-aeskey-dark-gray rounded-lg shadow-2xl absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 perspective-1000 transition-transform duration-300 ease-out animate-on-load"
+          style={{ transformStyle: 'preserve-3d', opacity: 0, transition: 'opacity 0.5s ease, transform 0.5s ease' }}
+        >
+          {/* Keyboard Keys */}
+          <div className="absolute inset-4 bg-aeskey-dark-gray rounded grid grid-cols-12 gap-1 p-2" style={{ transform: 'translateZ(10px)' }}>
+            {Array.from({ length: 60 }).map((_, i) => (
+              <div key={i} className="bg-aeskey-light-gray/90 rounded-sm" style={{ height: '20px' }}></div>
+            ))}
           </div>
         </div>
       </div>

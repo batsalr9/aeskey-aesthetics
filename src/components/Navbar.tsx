@@ -40,7 +40,7 @@ const Navbar = () => {
       <div className="container mx-auto flex justify-between items-center">
         <Link to="/" className="flex items-center">
           <img 
-            src="/lovable-uploads/b8a17b08-edb6-4483-ab16-3641b0e855a0.png" 
+            src="/lovable-uploads/c6f3dcaf-2133-4d62-8544-b11c5645daa6.png" 
             alt="AESKEY Logo" 
             className="h-10 md:h-12 transition-all duration-300"
           />
