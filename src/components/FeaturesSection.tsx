@@ -30,6 +30,9 @@ const FeaturesSection = () => {
   const featureRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   useEffect(() => {
+    // Pre-populate the featureRefs array with nulls
+    featureRefs.current = features.map(() => null);
+    
     const observer = new IntersectionObserver(
       entries => {
         entries.forEach(entry => {
@@ -37,7 +40,7 @@ const FeaturesSection = () => {
             // If the section is visible, animate the title and feature cards
             if (entry.target === featureSectionRef.current) {
               const titleElement = featureSectionRef.current?.querySelector('h2');
-              const descElement = featureSectionRef.current?.querySelector('p');
+              const descElement = featureSectionRef.current?.querySelector('p.section-description');
               
               if (titleElement) {
                 titleElement.classList.add('animate-fade-in');
@@ -70,6 +73,9 @@ const FeaturesSection = () => {
     }
 
     return () => {
+      if (featureSectionRef.current) {
+        observer.unobserve(featureSectionRef.current);
+      }
       observer.disconnect();
     };
   }, []);
@@ -81,7 +87,7 @@ const FeaturesSection = () => {
           <h2 className="text-3xl md:text-4xl font-bold font-metropolis mb-4 text-aeskey-dark-gray dark:text-white opacity-0">
             Exceptional <span className="text-aeskey-sky-blue">Features</span>
           </h2>
-          <p className="max-w-2xl mx-auto text-gray-600 dark:text-gray-300 opacity-0">
+          <p className="section-description max-w-2xl mx-auto text-gray-600 dark:text-gray-300 opacity-0">
             AESKEY keyboards combine cutting-edge technology with premium craftsmanship to deliver an unparalleled typing experience.
           </p>
         </div>

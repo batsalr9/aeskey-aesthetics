@@ -38,11 +38,12 @@ const Navbar = () => {
       }`}
     >
       <div className="container mx-auto flex justify-between items-center">
-        <Link 
-          to="/" 
-          className="font-metropolis text-2xl font-bold text-aeskey-dark-gray dark:text-white"
-        >
-          AES<span className="text-aeskey-sky-blue">KEY</span>
+        <Link to="/" className="flex items-center">
+          <img 
+            src="/lovable-uploads/b8a17b08-edb6-4483-ab16-3641b0e855a0.png" 
+            alt="AESKEY Logo" 
+            className="h-10 md:h-12 transition-all duration-300"
+          />
         </Link>
 
         {/* Desktop Navigation */}
