@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -80,6 +81,11 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    overflow-x: hidden;
+  }
+  
+  html {
+    scroll-behavior: smooth;
   }
 }
 
@@ -114,11 +120,29 @@
   }
   
   .wheel-scroll-snap {
-    scroll-snap-type: y mandatory;
+    scroll-snap-type: y proximity;
+    height: auto;
   }
   
   .wheel-scroll-snap > div {
     scroll-snap-align: start;
-    scroll-snap-stop: always;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Custom animation for wheel rotation effect */
+  @keyframes wheel-rotate {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  
+  .wheel-rotate {
+    animation: wheel-rotate 1s ease-out forwards;
   }
 }

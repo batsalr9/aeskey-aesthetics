@@ -143,54 +143,50 @@ const categories: Category[] = [
 const ProductCarousel = () => {
   const [activeCategory, setActiveCategory] = useState<number>(0);
   const [animating, setAnimating] = useState<boolean>(false);
+  const [scrollProgress, setScrollProgress] = useState<number>(0);
   const sectionRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   
   // Use intersection observer for detecting when the section is visible
   const { ref: inViewRef, inView } = useInView({
-    threshold: 0.2,
+    threshold: 0.1,
     triggerOnce: false,
   });
   
-  // Handle wheel scrolling for desktop
+  // Track scroll position within the section
   useEffect(() => {
-    const handleWheel = (e: WheelEvent) => {
-      // Only handle wheel events when the section is in view
-      if (!inView || animating) return;
+    const handleScroll = () => {
+      if (!sectionRef.current || !inView) return;
       
-      // Get the section's bounding rect to determine if we're inside it
-      const rect = sectionRef.current?.getBoundingClientRect();
-      if (!rect) return;
+      const sectionRect = sectionRef.current.getBoundingClientRect();
+      const sectionTop = sectionRect.top;
+      const sectionHeight = sectionRect.height;
+      const viewportHeight = window.innerHeight;
       
-      // Check if the mouse is inside the section
-      const isInsideSection = 
-        e.clientY >= rect.top && 
-        e.clientY <= rect.bottom && 
-        e.clientX >= rect.left && 
-        e.clientX <= rect.right;
+      // Calculate how far we've scrolled through the section (0 to 1)
+      const scrollPosition = 1 - (sectionTop / (sectionHeight - viewportHeight));
+      const boundedProgress = Math.max(0, Math.min(1, scrollPosition));
       
-      if (isInsideSection) {
-        e.preventDefault();
+      setScrollProgress(boundedProgress);
+      
+      // Change category based on scroll progress
+      if (!animating) {
+        const categoryIndex = Math.min(
+          categories.length - 1,
+          Math.floor(boundedProgress * categories.length)
+        );
         
-        setAnimating(true);
-        
-        // Determine scroll direction
-        if (e.deltaY > 0) {
-          // Scroll down - next category
-          setActiveCategory((prev) => (prev + 1) % categories.length);
-        } else {
-          // Scroll up - previous category
-          setActiveCategory((prev) => (prev - 1 + categories.length) % categories.length);
+        if (categoryIndex !== activeCategory) {
+          setAnimating(true);
+          setActiveCategory(categoryIndex);
+          setTimeout(() => setAnimating(false), 400);
         }
-        
-        // Reset animation flag after transition completes
-        setTimeout(() => setAnimating(false), 800);
       }
     };
     
-    window.addEventListener('wheel', handleWheel, { passive: false });
-    return () => window.removeEventListener('wheel', handleWheel);
-  }, [inView, animating]);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [inView, activeCategory, animating]);
   
   // Function to change the category
   const changeCategory = (index: number) => {
@@ -198,6 +194,16 @@ const ProductCarousel = () => {
     
     setAnimating(true);
     setActiveCategory(index);
+    
+    // Scroll to the appropriate position in the section
+    if (sectionRef.current) {
+      const sectionHeight = sectionRef.current.offsetHeight;
+      const scrollTarget = sectionRef.current.offsetTop + (sectionHeight * (index / categories.length));
+      window.scrollTo({
+        top: scrollTarget,
+        behavior: 'smooth'
+      });
+    }
     
     // Reset animation flag after transition completes
     setTimeout(() => setAnimating(false), 800);
@@ -218,9 +224,9 @@ const ProductCarousel = () => {
     
     setAnimating(true);
     if (direction === 'next') {
-      setActiveCategory((prev) => (prev + 1) % categories.length);
+      setActiveCategory((prev) => Math.min(prev + 1, categories.length - 1));
     } else {
-      setActiveCategory((prev) => (prev - 1 + categories.length) % categories.length);
+      setActiveCategory((prev) => Math.max(prev - 1, 0));
     }
     
     setTimeout(() => setAnimating(false), 800);
@@ -230,7 +236,12 @@ const ProductCarousel = () => {
     <section 
       ref={setRefs} 
       id="product-carousel" 
-      className="py-20 min-h-screen relative overflow-hidden flex flex-col justify-center"
+      className="relative overflow-hidden wheel-scroll-snap"
+      style={{ 
+        height: `${Math.max(300, window.innerHeight * categories.length)}px`,
+        paddingTop: '10vh',
+        paddingBottom: '10vh'
+      }}
     >
       {/* Background circles - visual enhancement */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
@@ -238,156 +249,171 @@ const ProductCarousel = () => {
         <div className="absolute -left-[200px] top-[60%] w-[400px] h-[400px] rounded-full bg-aeskey-sky-blue/5 blur-xl"></div>
       </div>
       
-      <div className="container mx-auto px-4 relative z-10">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold font-metropolis mb-4 text-aeskey-dark-gray dark:text-white">
-            Our <span className="text-aeskey-sky-blue">Collections</span>
-          </h2>
-          <p className="max-w-2xl mx-auto text-gray-600 dark:text-gray-300">
-            Explore our premium product categories. Scroll to discover more.
-          </p>
-        </div>
-        
-        {/* Category navigation */}
-        <div className="flex justify-center mb-8 overflow-x-auto no-scrollbar">
-          <div className="flex space-x-2 md:space-x-4">
-            {categories.map((category, index) => (
-              <button
-                key={category.id}
-                onClick={() => changeCategory(index)}
-                className={`px-4 py-2 rounded-full transition-all duration-300 whitespace-nowrap ${
-                  activeCategory === index
-                    ? "bg-aeskey-sky-blue text-white font-medium"
-                    : "bg-gray-100 dark:bg-aeskey-dark-gray/40 hover:bg-gray-200 dark:hover:bg-aeskey-dark-gray/60"
-                }`}
-              >
-                {category.name}
-              </button>
-            ))}
-          </div>
-        </div>
-        
-        {/* Products display with carousel */}
-        <div className="relative">
-          {/* Category Header */}
-          <div className="flex justify-between items-center mb-8">
-            <h3 className="text-2xl md:text-3xl font-bold">
-              {categories[activeCategory].name}
-            </h3>
-            <Link to="/products">
-              <Button 
-                variant="outline" 
-                className="border-aeskey-sky-blue text-aeskey-sky-blue hover:bg-aeskey-sky-blue/10"
-              >
-                Shop All
-                <ArrowRight size={16} />
-              </Button>
-            </Link>
+      {/* Fixed position content that stays in view */}
+      <div className="sticky top-0 min-h-screen flex items-center justify-center">
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold font-metropolis mb-4 text-aeskey-dark-gray dark:text-white">
+              Our <span className="text-aeskey-sky-blue">Collections</span>
+            </h2>
+            <p className="max-w-2xl mx-auto text-gray-600 dark:text-gray-300">
+              Keep scrolling to explore our premium product categories.
+            </p>
           </div>
           
-          {/* Products carousel */}
-          <div 
-            className={`transition-opacity duration-500 ${
-              animating ? "opacity-0" : "opacity-100"
-            }`}
-          >
-            <Carousel
-              opts={{
-                align: "start",
-                loop: true,
-              }}
-              className="w-full"
-            >
-              <CarouselContent>
-                {categories[activeCategory].products.map((product) => (
-                  <CarouselItem 
-                    key={product.id} 
-                    className={`basis-full md:basis-1/2 lg:basis-1/3 pl-4`}
-                  >
-                    <Link to={`/products/${product.id}`}>
-                      <div className="overflow-hidden rounded-lg bg-white dark:bg-aeskey-dark-gray/40 shadow-lg transition-all duration-300 hover:-translate-y-2 h-full">
-                        <div className="relative h-52 overflow-hidden">
-                          <img 
-                            src={product.image} 
-                            alt={product.name}
-                            className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-                            <span className="text-white font-medium">View Details</span>
-                          </div>
-                        </div>
-                        <div className="p-6">
-                          <h3 className="text-xl font-bold mb-2 text-aeskey-dark-gray dark:text-white">
-                            {product.name}
-                          </h3>
-                          <p className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-2">
-                            {product.description}
-                          </p>
-                          <div className="flex justify-between items-center">
-                            <span className="text-xl font-bold text-aeskey-sky-blue">
-                              ${product.price}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </Link>
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-              <CarouselPrevious className="left-0" />
-              <CarouselNext className="right-0" />
-            </Carousel>
-          </div>
-        </div>
-        
-        {/* Mobile navigation arrows */}
-        {isMobile && (
-          <div className="flex justify-center mt-8 space-x-4">
-            <Button 
-              variant="outline" 
-              size="icon"
-              onClick={() => handleNavigation('prev')}
-              disabled={animating}
-              className="rounded-full"
-            >
-              <ChevronLeft size={24} />
-            </Button>
-            <Button 
-              variant="outline" 
-              size="icon"
-              onClick={() => handleNavigation('next')}
-              disabled={animating}
-              className="rounded-full"
-            >
-              <ChevronRight size={24} />
-            </Button>
-          </div>
-        )}
-        
-        {/* Scroll indicator for desktop */}
-        {!isMobile && (
-          <div className="hidden md:flex flex-col items-center mt-12">
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Scroll to explore more categories</p>
-            <div className="w-8 h-12 border-2 border-aeskey-sky-blue rounded-full flex justify-center">
-              <div className="w-1 h-3 bg-aeskey-sky-blue rounded-full mt-2 animate-bounce"></div>
+          {/* Category navigation */}
+          <div className="flex justify-center mb-8 overflow-x-auto no-scrollbar">
+            <div className="flex space-x-2 md:space-x-4">
+              {categories.map((category, index) => (
+                <button
+                  key={category.id}
+                  onClick={() => changeCategory(index)}
+                  className={`px-4 py-2 rounded-full transition-all duration-300 whitespace-nowrap ${
+                    activeCategory === index
+                      ? "bg-aeskey-sky-blue text-white font-medium"
+                      : "bg-gray-100 dark:bg-aeskey-dark-gray/40 hover:bg-gray-200 dark:hover:bg-aeskey-dark-gray/60"
+                  }`}
+                >
+                  {category.name}
+                </button>
+              ))}
             </div>
           </div>
-        )}
-        
-        {/* Category progress indicator */}
-        <div className="flex justify-center mt-8">
-          <div className="flex space-x-2">
-            {categories.map((_, index) => (
-              <div
-                key={index}
-                onClick={() => changeCategory(index)}
-                className={`w-3 h-3 rounded-full cursor-pointer ${
-                  activeCategory === index 
-                    ? "bg-aeskey-sky-blue" 
-                    : "bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500"
-                }`}
+          
+          {/* Products display with carousel */}
+          <div className="relative">
+            {/* Category Header */}
+            <div className="flex justify-between items-center mb-8">
+              <h3 className="text-2xl md:text-3xl font-bold">
+                {categories[activeCategory].name}
+              </h3>
+              <Link to="/products">
+                <Button 
+                  variant="outline" 
+                  className="border-aeskey-sky-blue text-aeskey-sky-blue hover:bg-aeskey-sky-blue/10"
+                >
+                  Shop All
+                  <ArrowRight size={16} />
+                </Button>
+              </Link>
+            </div>
+            
+            {/* Progress indicator */}
+            <div className="w-full h-1 bg-gray-200 dark:bg-gray-700 rounded-full mb-8 overflow-hidden">
+              <div 
+                className="h-full bg-aeskey-sky-blue transition-all duration-300 ease-out"
+                style={{ width: `${scrollProgress * 100}%` }}
               ></div>
-            ))}
+            </div>
+            
+            {/* Products carousel with transition effect */}
+            <div 
+              className="transition-all duration-500"
+              style={{
+                opacity: animating ? 0.5 : 1,
+                transform: `scale(${animating ? 0.98 : 1})`,
+              }}
+            >
+              <Carousel
+                opts={{
+                  align: "start",
+                  loop: true,
+                }}
+                className="w-full"
+              >
+                <CarouselContent>
+                  {categories[activeCategory].products.map((product) => (
+                    <CarouselItem 
+                      key={product.id} 
+                      className="basis-full md:basis-1/2 lg:basis-1/3 pl-4"
+                    >
+                      <Link to={`/products/${product.id}`}>
+                        <div className="overflow-hidden rounded-lg bg-white dark:bg-aeskey-dark-gray/40 shadow-lg transition-all duration-300 hover:-translate-y-2 h-full">
+                          <div className="relative h-52 overflow-hidden">
+                            <img 
+                              src={product.image} 
+                              alt={product.name}
+                              className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
+                              <span className="text-white font-medium">View Details</span>
+                            </div>
+                          </div>
+                          <div className="p-6">
+                            <h3 className="text-xl font-bold mb-2 text-aeskey-dark-gray dark:text-white">
+                              {product.name}
+                            </h3>
+                            <p className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-2">
+                              {product.description}
+                            </p>
+                            <div className="flex justify-between items-center">
+                              <span className="text-xl font-bold text-aeskey-sky-blue">
+                                ${product.price}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                <CarouselPrevious className="left-0" />
+                <CarouselNext className="right-0" />
+              </Carousel>
+            </div>
+          </div>
+          
+          {/* Mobile navigation arrows */}
+          {isMobile && (
+            <div className="flex justify-center mt-8 space-x-4">
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => handleNavigation('prev')}
+                disabled={animating || activeCategory === 0}
+                className="rounded-full"
+              >
+                <ChevronLeft size={24} />
+              </Button>
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => handleNavigation('next')}
+                disabled={animating || activeCategory === categories.length - 1}
+                className="rounded-full"
+              >
+                <ChevronRight size={24} />
+              </Button>
+            </div>
+          )}
+          
+          {/* Scroll indicator for desktop */}
+          {!isMobile && (
+            <div className="hidden md:flex flex-col items-center mt-12">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                Scroll to explore more categories
+              </p>
+              <div className="w-8 h-12 border-2 border-aeskey-sky-blue rounded-full flex justify-center">
+                <div className="w-1 h-3 bg-aeskey-sky-blue rounded-full mt-2 animate-bounce"></div>
+              </div>
+            </div>
+          )}
+          
+          {/* Category progress indicator */}
+          <div className="flex justify-center mt-8">
+            <div className="flex space-x-2">
+              {categories.map((_, index) => (
+                <div
+                  key={index}
+                  onClick={() => changeCategory(index)}
+                  className={`w-3 h-3 rounded-full cursor-pointer transition-all duration-300 ${
+                    activeCategory === index 
+                      ? "bg-aeskey-sky-blue scale-125" 
+                      : "bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500"
+                  }`}
+                ></div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
