@@ -6,12 +6,14 @@ interface CategoryNavProps {
   categories: Category[];
   activeCategory: number;
   changeCategory: (index: number) => void;
+  getCategoryStyle?: (index: number) => React.CSSProperties;
 }
 
 const CategoryNav: React.FC<CategoryNavProps> = ({ 
   categories, 
   activeCategory, 
-  changeCategory 
+  changeCategory,
+  getCategoryStyle
 }) => {
   return (
     <div className="flex justify-center mb-8 overflow-x-auto no-scrollbar">
@@ -20,9 +22,10 @@ const CategoryNav: React.FC<CategoryNavProps> = ({
           <button
             key={category.id}
             onClick={() => changeCategory(index)}
-            className={`px-4 py-2 rounded-full transition-all duration-300 whitespace-nowrap ${
+            style={getCategoryStyle ? getCategoryStyle(index) : {}}
+            className={`px-4 py-2 rounded-full transition-all duration-500 whitespace-nowrap ${
               activeCategory === index
-                ? "bg-aeskey-sky-blue text-white font-medium"
+                ? "bg-aeskey-sky-blue text-white font-medium shadow-lg"
                 : "bg-gray-100 dark:bg-aeskey-dark-gray/40 hover:bg-gray-200 dark:hover:bg-aeskey-dark-gray/60"
             }`}
           >

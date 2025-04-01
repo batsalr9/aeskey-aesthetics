@@ -10,7 +10,13 @@ export const useCarouselScroll = ({ categoriesLength }: UseCarouselScrollProps) 
   const [activeCategory, setActiveCategory] = useState<number>(0);
   const [animating, setAnimating] = useState<boolean>(false);
   const [scrollProgress, setScrollProgress] = useState<number>(0);
+  const [isProgrammaticScroll, setIsProgrammaticScroll] = useState<boolean>(false);
+  const lastScrollTimeRef = useRef<number>(0);
+  const scrollThrottleTimeMs = 50; // Throttle time in ms
   const sectionRef = useRef<HTMLDivElement>(null);
+  
+  // Enhanced multiplier for scroll distance
+  const scrollMultiplier = 3;
   
   // Use intersection observer for detecting when the section is visible
   const { ref: inViewRef, inView } = useInView({
@@ -18,60 +24,83 @@ export const useCarouselScroll = ({ categoriesLength }: UseCarouselScrollProps) 
     triggerOnce: false,
   });
   
-  // Track scroll position within the section
+  // Enhanced scroll position tracking within the section
   useEffect(() => {
     const handleScroll = () => {
       if (!sectionRef.current || !inView) return;
+      
+      const currentTime = Date.now();
+      if (currentTime - lastScrollTimeRef.current < scrollThrottleTimeMs && !isProgrammaticScroll) return;
+      lastScrollTimeRef.current = currentTime;
       
       const sectionRect = sectionRef.current.getBoundingClientRect();
       const sectionTop = sectionRect.top;
       const sectionHeight = sectionRect.height;
       const viewportHeight = window.innerHeight;
       
-      // Calculate how far we've scrolled through the section (0 to 1)
-      const scrollPosition = 1 - (sectionTop / (sectionHeight - viewportHeight));
-      const boundedProgress = Math.max(0, Math.min(1, scrollPosition));
+      // Calculate how far we've scrolled through the section with enhanced sensitivity
+      // This makes the scroll effect last longer per category
+      const rawScrollPosition = 1 - (sectionTop / (sectionHeight - viewportHeight));
+      
+      // Apply easing for smoother progression
+      // Using cubic easing function for more natural feel
+      const easeInOutCubic = (t: number): number => {
+        return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      };
+      
+      // Apply easing and bound the progress
+      const adjustedScrollPosition = easeInOutCubic(rawScrollPosition);
+      const boundedProgress = Math.max(0, Math.min(1, adjustedScrollPosition));
       
       setScrollProgress(boundedProgress);
       
-      // Change category based on scroll progress
-      if (!animating) {
+      // Change category based on scroll progress with more gradual transitions
+      if (!animating && !isProgrammaticScroll) {
+        // Multiply by a factor to create more virtual "scroll space" per category
+        const virtualProgress = boundedProgress * scrollMultiplier % 1;
+        
         const categoryIndex = Math.min(
           categoriesLength - 1,
-          Math.floor(boundedProgress * categoriesLength)
+          Math.floor((boundedProgress * scrollMultiplier) % categoriesLength)
         );
         
         if (categoryIndex !== activeCategory) {
           setAnimating(true);
           setActiveCategory(categoryIndex);
-          setTimeout(() => setAnimating(false), 400);
+          setTimeout(() => setAnimating(false), 600); // Extended animation time
         }
       }
     };
     
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [inView, activeCategory, animating, categoriesLength]);
+  }, [inView, activeCategory, animating, categoriesLength, isProgrammaticScroll]);
 
-  // Function to change the category
+  // Improved function to change the category with smooth scrolling
   const changeCategory = (index: number) => {
     if (animating) return;
     
     setAnimating(true);
     setActiveCategory(index);
     
-    // Scroll to the appropriate position in the section
+    // Scroll to the appropriate position in the section with smooth easing
     if (sectionRef.current) {
       const sectionHeight = sectionRef.current.offsetHeight;
-      const scrollTarget = sectionRef.current.offsetTop + (sectionHeight * (index / categoriesLength));
+      // Calculate target position for smoother scroll positioning
+      const scrollTarget = sectionRef.current.offsetTop + (sectionHeight * (index / (categoriesLength * scrollMultiplier)));
+      
+      setIsProgrammaticScroll(true);
       window.scrollTo({
         top: scrollTarget,
         behavior: 'smooth'
       });
+      
+      // Reset programmatic scroll flag after animation completes
+      setTimeout(() => {
+        setIsProgrammaticScroll(false);
+        setAnimating(false);
+      }, 1000);
     }
-    
-    // Reset animation flag after transition completes
-    setTimeout(() => setAnimating(false), 800);
   };
   
   // Set both refs
@@ -83,18 +112,23 @@ export const useCarouselScroll = ({ categoriesLength }: UseCarouselScrollProps) 
     inViewRef(element);
   };
   
-  // Function to handle navigation
+  // Enhanced navigation with improved animations
   const handleNavigation = (direction: 'next' | 'prev') => {
     if (animating) return;
     
     setAnimating(true);
+    let newIndex;
+    
     if (direction === 'next') {
-      setActiveCategory((prev) => Math.min(prev + 1, categoriesLength - 1));
+      newIndex = (activeCategory + 1) % categoriesLength; // Loop back to start
     } else {
-      setActiveCategory((prev) => Math.max(prev - 1, 0));
+      newIndex = (activeCategory - 1 + categoriesLength) % categoriesLength; // Loop back to end
     }
     
-    setTimeout(() => setAnimating(false), 800);
+    setActiveCategory(newIndex);
+    changeCategory(newIndex);
+    
+    setTimeout(() => setAnimating(false), 1000); // Extended animation time
   };
 
   return {
