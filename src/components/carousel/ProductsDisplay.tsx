@@ -24,7 +24,7 @@ const ProductsDisplay: React.FC<ProductsDisplayProps> = ({
       className="transition-all duration-500"
       style={{
         opacity: animating ? 0.5 : 1,
-        transform: `scale(${animating ? 0.98 : 1})`,
+        transform: `scale(${animating ? 0.98 : 1}) translateY(${animating ? '-5px' : '0'})`,
       }}
     >
       <Carousel
@@ -35,17 +35,20 @@ const ProductsDisplay: React.FC<ProductsDisplayProps> = ({
         className="w-full"
       >
         <CarouselContent>
-          {category.products.map((product) => (
+          {category.products.map((product, idx) => (
             <CarouselItem 
               key={product.id} 
-              className="basis-full md:basis-1/2 lg:basis-1/3 pl-4"
+              className="basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4 pl-4"
+              style={{
+                animationDelay: `${idx * 50}ms`,
+              }}
             >
               <ProductCard product={product} />
             </CarouselItem>
           ))}
         </CarouselContent>
-        <CarouselPrevious className="left-0" />
-        <CarouselNext className="right-0" />
+        <CarouselPrevious className="-left-2 md:-left-6" />
+        <CarouselNext className="-right-2 md:-right-6" />
       </Carousel>
     </div>
   );

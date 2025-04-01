@@ -15,8 +15,8 @@ export const useCarouselScroll = ({ categoriesLength }: UseCarouselScrollProps) 
   const scrollThrottleTimeMs = 50; // Throttle time in ms
   const sectionRef = useRef<HTMLDivElement>(null);
   
-  // Enhanced multiplier for scroll distance
-  const scrollMultiplier = 3;
+  // Reduced multiplier for more natural scroll distance
+  const scrollMultiplier = 1.5;
   
   // Use intersection observer for detecting when the section is visible
   const { ref: inViewRef, inView } = useInView({
@@ -39,35 +39,29 @@ export const useCarouselScroll = ({ categoriesLength }: UseCarouselScrollProps) 
       const viewportHeight = window.innerHeight;
       
       // Calculate how far we've scrolled through the section with enhanced sensitivity
-      // This makes the scroll effect last longer per category
-      const rawScrollPosition = 1 - (sectionTop / (sectionHeight - viewportHeight));
+      const scrollPosition = -sectionTop / (sectionHeight - viewportHeight);
+      const boundedScrollPosition = Math.max(0, Math.min(1, scrollPosition));
       
       // Apply easing for smoother progression
-      // Using cubic easing function for more natural feel
-      const easeInOutCubic = (t: number): number => {
-        return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      const easeInOutQuad = (t: number): number => {
+        return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
       };
       
-      // Apply easing and bound the progress
-      const adjustedScrollPosition = easeInOutCubic(rawScrollPosition);
-      const boundedProgress = Math.max(0, Math.min(1, adjustedScrollPosition));
-      
-      setScrollProgress(boundedProgress);
+      const adjustedScrollPosition = easeInOutQuad(boundedScrollPosition);
+      setScrollProgress(adjustedScrollPosition);
       
       // Change category based on scroll progress with more gradual transitions
       if (!animating && !isProgrammaticScroll) {
-        // Multiply by a factor to create more virtual "scroll space" per category
-        const virtualProgress = boundedProgress * scrollMultiplier % 1;
-        
+        const virtualProgress = boundedScrollPosition * categoriesLength;
         const categoryIndex = Math.min(
           categoriesLength - 1,
-          Math.floor((boundedProgress * scrollMultiplier) % categoriesLength)
+          Math.floor(virtualProgress)
         );
         
         if (categoryIndex !== activeCategory) {
           setAnimating(true);
           setActiveCategory(categoryIndex);
-          setTimeout(() => setAnimating(false), 600); // Extended animation time
+          setTimeout(() => setAnimating(false), 500);
         }
       }
     };
@@ -76,7 +70,7 @@ export const useCarouselScroll = ({ categoriesLength }: UseCarouselScrollProps) 
     return () => window.removeEventListener('scroll', handleScroll);
   }, [inView, activeCategory, animating, categoriesLength, isProgrammaticScroll]);
 
-  // Improved function to change the category with smooth scrolling
+  // Function to change the category with smooth scrolling
   const changeCategory = (index: number) => {
     if (animating) return;
     
@@ -87,7 +81,7 @@ export const useCarouselScroll = ({ categoriesLength }: UseCarouselScrollProps) 
     if (sectionRef.current) {
       const sectionHeight = sectionRef.current.offsetHeight;
       // Calculate target position for smoother scroll positioning
-      const scrollTarget = sectionRef.current.offsetTop + (sectionHeight * (index / (categoriesLength * scrollMultiplier)));
+      const scrollTarget = sectionRef.current.offsetTop + (sectionHeight * (index / categoriesLength));
       
       setIsProgrammaticScroll(true);
       window.scrollTo({
@@ -99,7 +93,7 @@ export const useCarouselScroll = ({ categoriesLength }: UseCarouselScrollProps) 
       setTimeout(() => {
         setIsProgrammaticScroll(false);
         setAnimating(false);
-      }, 1000);
+      }, 800);
     }
   };
   
@@ -112,7 +106,7 @@ export const useCarouselScroll = ({ categoriesLength }: UseCarouselScrollProps) 
     inViewRef(element);
   };
   
-  // Enhanced navigation with improved animations
+  // Navigation with improved animations
   const handleNavigation = (direction: 'next' | 'prev') => {
     if (animating) return;
     
@@ -127,8 +121,6 @@ export const useCarouselScroll = ({ categoriesLength }: UseCarouselScrollProps) 
     
     setActiveCategory(newIndex);
     changeCategory(newIndex);
-    
-    setTimeout(() => setAnimating(false), 1000); // Extended animation time
   };
 
   return {

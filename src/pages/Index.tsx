@@ -8,16 +8,16 @@ import Footer from "@/components/Footer";
 
 const Index = () => {
   return (
-    <>
+    <div className="relative overflow-hidden">
       <Navbar />
-      <main className="min-h-screen">
+      <main>
         <HeroSection />
         <ProductCarousel />
         <ProductShowcase />
         <TestimonialsSection />
       </main>
       <Footer />
-    </>
+    </div>
   );
 };
 
