@@ -7,7 +7,7 @@ const HeroSection = () => {
   const keyboardRef = useRef<HTMLDivElement>(null);
 
   const scrollToFeatures = () => {
-    document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
+    document.getElementById('product-carousel')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   useEffect(() => {
@@ -41,7 +41,7 @@ const HeroSection = () => {
 
   return (
     <section className="relative min-h-screen w-full overflow-hidden flex flex-col items-center justify-start pt-32 md:pt-40">
-      {/* Content - Now positioned above the keyboard */}
+      {/* Content - Text content first */}
       <div className="container mx-auto px-4 relative z-10 mb-16 md:mb-32">
         <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
           <h1 
@@ -70,14 +70,14 @@ const HeroSection = () => {
               onClick={scrollToFeatures}
               className="border-aeskey-sky-blue text-aeskey-sky-blue hover:bg-aeskey-sky-blue/10 px-8 py-6 transition-transform hover:scale-105"
             >
-              See Features
+              See Products
             </Button>
           </div>
         </div>
       </div>
 
-      {/* 3D Keyboard - Now positioned below the text */}
-      <div className="absolute bottom-20 w-full h-[40%] flex items-center justify-center">
+      {/* 3D Keyboard - Now positioned below the text content with more space */}
+      <div className="absolute bottom-10 w-full h-[40%] flex items-center justify-center">
         <div 
           ref={keyboardRef}
           className="w-[600px] h-[250px] bg-gradient-to-br from-aeskey-sky-blue via-aeskey-sky-blue/70 to-aeskey-dark-gray rounded-lg shadow-2xl absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 perspective-1000 transition-transform duration-300 ease-out animate-on-load"
@@ -94,7 +94,7 @@ const HeroSection = () => {
 
       {/* Scroll Down Indicator */}
       <div 
-        className="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce cursor-pointer"
+        className="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce cursor-pointer z-20"
         onClick={scrollToFeatures}
       >
         <ArrowDown className="text-aeskey-dark-gray dark:text-white" />
